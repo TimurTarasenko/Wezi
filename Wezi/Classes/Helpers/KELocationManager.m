@@ -15,10 +15,11 @@ NSString * const kLocationDidChangeNotificationKey = @"locationManagerlocationDi
 @property (nonatomic, strong)       CLLocationManager *locationManager;
 @property (nonatomic, readwrite)    BOOL isMonitoringLocation;
 
+
 @end
 
 @implementation KELocationManager
-	//@synthesize currentLocation;
+@synthesize currentLocation;
 
 @synthesize isMonitoringLocation;
 
@@ -68,13 +69,13 @@ NSString * const kLocationDidChangeNotificationKey = @"locationManagerlocationDi
 
 - (CLLocationManager *)locationManager
 {
-    if (!_locationManager) {
-        _locationManager = [[CLLocationManager alloc] init];
-            [_locationManager setDistanceFilter:1000];
-            [_locationManager setDesiredAccuracy: kCLLocationAccuracyThreeKilometers];
-    }
-    
-    return _locationManager;
+	if (!_locationManager) {
+		_locationManager = [[CLLocationManager alloc] init];
+		[_locationManager setDistanceFilter:1000];
+		[_locationManager setDesiredAccuracy:kCLLocationAccuracyThreeKilometers];
+	}
+	
+	return _locationManager;
 }
 
 - (CLLocation *)currentLocation
@@ -86,6 +87,8 @@ NSString * const kLocationDidChangeNotificationKey = @"locationManagerlocationDi
 
 - (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation
 {
+	NSLog(@"%d %s",__LINE__, __PRETTY_FUNCTION__);
+	
     NSMutableDictionary *userInfo = [NSMutableDictionary dictionaryWithCapacity:2];
     if (newLocation) {
         userInfo[@"newLocation"] = newLocation;
@@ -113,12 +116,22 @@ NSString * const kLocationDidChangeNotificationKey = @"locationManagerlocationDi
 
 - (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status
 {
+	NSLog(@"%d %s",__LINE__, __PRETTY_FUNCTION__);
+	
 	if (status == kCLAuthorizationStatusDenied) {
 		NSLog(@"permission denied");
+		
+		self.isPermitted = NO;
+			[[NSNotificationCenter defaultCenter] postNotificationName:@"HideCurrentLocationPage" object:self];
 	}
 	else if (status == kCLAuthorizationStatusAuthorized) {
 		NSLog(@"permission granted");
+		
+		self.isPermitted = YES;
+			[[NSNotificationCenter defaultCenter] postNotificationName:@"HandlePermissions" object:self];
 	}
+	
+	
 }
 
 @end

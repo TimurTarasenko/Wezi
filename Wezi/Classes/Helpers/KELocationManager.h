@@ -14,6 +14,7 @@ extern NSString * const kLocationDidChangeNotificationKey;
 
 @property (nonatomic, readonly)     CLLocation *currentLocation;
 @property (nonatomic, readonly)     BOOL isMonitoringLocation;
+@property (nonatomic, assign)		BOOL isPermitted;
 
 + (instancetype)sharedManager;
 - (void)startMonitoringLocationChanges;

@@ -10,6 +10,7 @@
 #import "Place.h"
 #import "KEReachabilityUtil.h"
 #import "AFHTTPClient.h"
+#import "KELocationManager.h"
 
 @implementation KEAppDelegate
 
@@ -21,7 +22,7 @@
 {
 	[[UIToolbar appearance] setBackgroundImage:[UIImage imageNamed:@"toolbar.png"] forToolbarPosition:UIToolbarPositionAny barMetrics:UIBarMetricsDefault];
 	[[KEReachabilityUtil sharedUtil] checkInternetConnectionWithNotification];
-	
+		
 	return YES;
 }
 
@@ -147,5 +148,21 @@
     return [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
 }
 
+
+- (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status
+{
+	NSLog(@"%d %s",__LINE__, __PRETTY_FUNCTION__);
+	
+	if (status == kCLAuthorizationStatusDenied) {
+		NSLog(@"permission denied");
+		
+	
+	}
+	else if (status == kCLAuthorizationStatusAuthorized) {
+		NSLog(@"permission granted");
+		
+	}
+	
+}
 
 @end

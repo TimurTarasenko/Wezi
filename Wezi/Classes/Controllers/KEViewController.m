@@ -25,21 +25,23 @@
 #import "KEShareViewController.h"
 #import "KEMailProvider.h"
 
-@interface KEViewController () <UIScrollViewDelegate, KECoordinateFillProtocol>
+@interface KEViewController () <UIScrollViewDelegate, KECoordinateFillProtocol, CLLocationManagerDelegate>
 
-@property (nonatomic, strong)       KEWindowView *templateView;
+@property (nonatomic, strong)       KEWindowView *currentLocationView;
 @property (nonatomic, strong)       KEObservation *geo;
 @property (nonatomic, strong)       KEMapViewController *mapViewController;
 @property (nonatomic, strong)       KEShareViewController *shareViewController;
 @property (nonatomic, strong)       KEDataManager *dataManager;
+
 @property (nonatomic, strong)       NSMutableArray *entityArrayCoreData;
-@property (nonatomic, strong)       NSMutableArray *viewWithCoreData;
+@property (nonatomic, strong)       NSMutableArray *viewArrayWithCoreData;
 @property (nonatomic, strong)       NSManagedObjectContext *managedObjectContext;
 @property (nonatomic, strong)       CLLocation *loc;
 
 @property (nonatomic, readwrite)    BOOL isShownMapPopover;
 @property (nonatomic, readwrite)    BOOL pageControlBeingUsed;
 @property (nonatomic, assign)       BOOL internetDroppedFirstly;
+@property (nonatomic, assign)		BOOL isTrackingCurrentLocation;
 
 @end
 
@@ -51,13 +53,13 @@
     NSArray *places = [self.managedObjectContext executeFetchRequest:[self.dataManager requestWithEntityName:@"Place"]
                                                                error:&error];
     self.entityArrayCoreData = [NSMutableArray arrayWithArray:places];
-    self.viewWithCoreData = [[NSMutableArray alloc] init];
+    self.viewArrayWithCoreData = [[NSMutableArray alloc] init];
         
-	for (int i = 1; i <= [places count]; i++) {
+	for (NSUInteger i = 1; i <= [places count]; i++) {
 		KEWindowView *aView = [KEWindowView returnWindowView];
-		aView.frame = CGRectMake((self.scrollView.contentOffset.x + 1024 * i) + 52, 40 /*30*/, 920, 580);
+		aView.frame = CGRectMake((self.scrollView.contentOffset.x + 1024 * i) + 52, 40, 920, 580);
 		[self.scrollView addSubview:aView];
-		[self.viewWithCoreData addObject:aView];
+		[self.viewArrayWithCoreData addObject:aView];
 		
 		CLLocation *location = [[CLLocation alloc]initWithLatitude:[[places objectAtIndex:i - 1] latitude]
 		                                                 longitude:[[places objectAtIndex:i - 1] longitude]];
@@ -74,13 +76,14 @@
 {
 	[super viewDidLoad];
 	[self subscribeToReachabilityNotifications];
+		[self subscribeToCurrentLocationTrackingWithPemissionsNotification];
+
 	
 	if (![[KEReachabilityUtil sharedUtil] checkInternetConnection]) {
 		self.internetDroppedFirstly = YES;
 	}
 	else {
-		[self subscribeToReachabilityNotifications];
-		[self setupViews];
+		[self subscribeToReachabilityNotifications]; //TODO: check it !!!
 		
 		KEWeatherManager *weather = [KEWeatherManager sharedClient];
 		weather.delegate = self;
@@ -95,6 +98,10 @@
 		
 		[[KELocationManager sharedManager] startMonitoringLocationChanges];
 		
+		CLLocationManager *foo = [[CLLocationManager alloc] init];
+		[foo.delegate locationManager:foo didChangeAuthorizationStatus: kCLAuthorizationStatusAuthorized];
+		
+		
 		[self configurateUIElements];
 		self.dataManager = [KEDataManager sharedDataManager];
 		self.managedObjectContext = [self.dataManager managedObjectContextFromAppDelegate];
@@ -107,6 +114,13 @@
 	[super didReceiveMemoryWarning];
 }
 
+- (void)viewDidUnload
+{
+    [self setNavBar:nil];
+    [self setDownBar:nil];
+    [super viewDidUnload];
+}
+
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
@@ -115,18 +129,58 @@
 
 #pragma mark - UI configuration and update
 
+- (void)handleLocationPermissions
+{
+		//self.isTrackingCurrentLocation = [[KELocationManager sharedManager] isPermitted];
+	if ([[KELocationManager sharedManager] isPermitted]) {
+		[self viewDidLoad];
+	}
+}
+
+- (void)hide
+{
+	self.currentLocationView.hidden = YES;
+	
+	NSLog(@" SCROLL bef %f", self.scrollView.contentOffset.x);
+		//self.pageControl.numberOfPages = [self.viewArrayWithCoreData count];
+		//self.scrollView.contentSize = CGSizeMake(self.scrollView.frame.size.width * self.pageControl.numberOfPages, self.scrollView.frame.size.height);
+	
+	
+	[self.scrollView setContentOffset:CGPointMake(1024 * [self.viewArrayWithCoreData count] , 0) animated:YES];
+	self.pageControl.currentPage = [self.viewArrayWithCoreData count]-1;
+	NSLog(@" SCROLL aft %f", self.scrollView.contentOffset.x);
+	
+	
+    self.pageControl.currentPage = self.pageControl.numberOfPages+1;
+	 
+}
+
+- (void)show
+{
+	self.currentLocationView.hidden = NO;
+	
+	[self.scrollView setContentOffset:CGPointMake(0, 0) animated:YES];
+	NSLog(@" SCROLL sho %f", self.scrollView.contentOffset.x);
+	self.pageControl.numberOfPages = [self.viewArrayWithCoreData count]+1;
+	self.pageControl.currentPage = 0;
+	 self.scrollView.contentSize = CGSizeMake(self.scrollView.frame.size.width * self.pageControl.numberOfPages, self.scrollView.frame.size.height);
+}
+
+
 - (void)configurateUIElements
 {
+	NSLog(@"%d %s",__LINE__, __PRETTY_FUNCTION__);
+	
     self.scrollView.delegate = self;
     
 	self.pageControl.currentPage = 0;
 	[self.pageControl addTarget:self
 	                     action:@selector(changePage:)
 	           forControlEvents:UIControlEventValueChanged];
-    
-    self.templateView = [KEWindowView returnWindowView];
-    self.templateView.frame = CGRectMake(52, 40/*30*/, 920, 580);
-    [self.scrollView addSubview:self.templateView];
+	
+	self.currentLocationView = [KEWindowView returnWindowView];
+	self.currentLocationView.frame = CGRectMake(52, 40, 920, 580);
+	[self.scrollView addSubview:self.currentLocationView];
     
     self.mapViewController = [[KEMapViewController alloc]init];
     self.mapViewController.objectToDelegate = self;
@@ -171,23 +225,19 @@
 	[self.downBar addSubview:share];
 }
 
-- (void)setupViews
-{
-}
-
 - (void)updateUIWithObservationForCurrentLocation:(KEObservation *)observation
 {
 	if (observation) {
-		[self.templateView.conditionIcon setImage:[KEUIImageFactoryUtil imageDependsOnURL:observation.iconUrl]];
+		[self.currentLocationView.conditionIcon setImage:[KEUIImageFactoryUtil imageDependsOnURL:observation.iconUrl]];
 		NSString *string = [NSString stringWithFormat:@"%@ %@", [observation.temperatureC stringValue], @"°C"];
-		self.templateView.currentTemperature.text = string;
-		self.templateView.currentCondition.text = observation.weatherDescription;
-		self.templateView.place.text = [NSString subStringBeforeFirstCommaInString:observation.location[@"full"]];
-		self.templateView.windAbbreviation.text = observation.windShortAbbreviation;
-		self.templateView.wind.text = [observation.windSpeed stringValue];
-		self.templateView.humidity.text = observation.relativeHumidity;
-		self.templateView.pressure.text = observation.pressure;
-		self.templateView.timeStamp.text = observation.timeString;
+		self.currentLocationView.currentTemperature.text = string;
+		self.currentLocationView.currentCondition.text = observation.weatherDescription;
+		self.currentLocationView.place.text = [NSString subStringBeforeFirstCommaInString:observation.location[@"full"]];
+		self.currentLocationView.windAbbreviation.text = observation.windShortAbbreviation;
+		self.currentLocationView.wind.text = [observation.windSpeed stringValue];
+		self.currentLocationView.humidity.text = observation.relativeHumidity;
+		self.currentLocationView.pressure.text = observation.pressure;
+		self.currentLocationView.timeStamp.text = observation.timeString;
 	}
 }
 
@@ -216,9 +266,9 @@
 	
 	
 		//    NSLog(@"AfTom %@", forecast.conditionOnForecast  );
-	NSLog(@" %@", forecast.month);
-	NSLog(@" %@", forecast.weekDay);
-	NSLog(@" %@", forecast.dayNumber);
+//	NSLog(@" %@", forecast.month);
+//	NSLog(@" %@", forecast.weekDay);
+//	NSLog(@" %@", forecast.dayNumber);
 		//    NSLog(@" %@", forecast.yearNumber  );
 		//    NSLog(@" %@", forecast.humidity  );
 		//    NSLog(@" %@", forecast.wind  );
@@ -231,15 +281,15 @@
     [viewToUpdate.afterTommorowView setImage:[KEUIImageFactoryUtil imageDependsOnURL:forecast.iconURL]];
     viewToUpdate.afterTommorowTemp.text = [NSString stringWithFormat:@"%@ %@",forecast.highTemperature,@"°C"];
     
-//    NSLog(@"AfTom %@", forecast.conditionOnForecast  );
-    NSLog(@" %@", forecast.month  );
-    NSLog(@" %@", forecast.weekDay  );
-    NSLog(@" %@", forecast.dayNumber  );
-//    NSLog(@" %@", forecast.yearNumber  );
-//    NSLog(@" %@", forecast.humidity  );
-//    NSLog(@" %@", forecast.wind  );
-//    NSLog(@" %@", forecast.highTemperature  );
-//    NSLog(@" %@", forecast.lowTemperature  );
+		//    NSLog(@"AfTom %@", forecast.conditionOnForecast  );
+//    NSLog(@" %@", forecast.month  );
+//    NSLog(@" %@", forecast.weekDay  );
+//    NSLog(@" %@", forecast.dayNumber  );
+		//    NSLog(@" %@", forecast.yearNumber  );
+		//    NSLog(@" %@", forecast.humidity  );
+		//    NSLog(@" %@", forecast.wind  );
+		//    NSLog(@" %@", forecast.highTemperature  );
+		//    NSLog(@" %@", forecast.lowTemperature  );
 }
 
 - (void)updateAfterAfterTommorowWithForecast:(KEAfterAfterTommorowForecast *)forecast withView:(KEWindowView *)viewToUpdate
@@ -249,9 +299,9 @@
 	
 	
 		//    NSLog(@"AfAfTom %@", forecast.conditionOnForecast  );
-	NSLog(@" %@", forecast.month);
-	NSLog(@" %@", forecast.weekDay);
-	NSLog(@" %@", forecast.dayNumber);
+//	NSLog(@" %@", forecast.month);
+//	NSLog(@" %@", forecast.weekDay);
+//	NSLog(@" %@", forecast.dayNumber);
 		//    NSLog(@" %@", forecast.yearNumber  );
 		//    NSLog(@" %@", forecast.humidity  );
 		//    NSLog(@" %@", forecast.wind  );
@@ -284,9 +334,9 @@
 			[SVProgressHUD showErrorWithStatus:[error localizedDescription]];
 		}
 		else {
-			[weakSelf updateTommorowWithForecast:[days valueForKey:@"Tommorow"] withView:self.templateView];
-			[weakSelf updateAfterTomorrowWithForecast:[days valueForKey:@"AfterTommorow"] withView:self.templateView];
-			[weakSelf updateAfterAfterTommorowWithForecast:[days valueForKey:@"AfterAfterTommorow"] withView:self.templateView];
+			[weakSelf updateTommorowWithForecast:[days valueForKey:@"Tommorow"] withView:self.currentLocationView];
+			[weakSelf updateAfterTomorrowWithForecast:[days valueForKey:@"AfterTommorow"] withView:self.currentLocationView];
+			[weakSelf updateAfterAfterTommorowWithForecast:[days valueForKey:@"AfterAfterTommorow"] withView:self.currentLocationView];
 			[SVProgressHUD showSuccessWithStatus:@"Ok!"];
 		}
     }];
@@ -364,11 +414,11 @@
 			
 			if (self.pageControl.currentPage == [self.entityArrayCoreData count]) {
 				[self reloadDataWithNewLocation:self.loc
-				                       withView:[self.viewWithCoreData objectAtIndex:self.pageControl.currentPage - 1]];
+				                       withView:[self.viewArrayWithCoreData objectAtIndex:self.pageControl.currentPage - 1]];
 			}
 			else {
 				[self reloadDataWithNewLocation:self.loc
-				                       withView:[self.viewWithCoreData objectAtIndex:self.pageControl.currentPage - 1]];
+				                       withView:[self.viewArrayWithCoreData objectAtIndex:self.pageControl.currentPage - 1]];
 			}
 		}
 		else {
@@ -398,9 +448,9 @@
     }    
     if (self.pageControl.numberOfPages == 2) {
         KEWindowView *foo = [KEWindowView returnWindowView];
-        foo.frame = CGRectMake(1076, 40/*30*/, 920, 580);
+        foo.frame = CGRectMake(1076, 40, 920, 580);
         [self.scrollView addSubview:foo];
-        [self.viewWithCoreData addObject:foo];
+        [self.viewArrayWithCoreData addObject:foo];
         
         if ([self.entityArrayCoreData count] == 1) {
             [self.entityArrayCoreData addObject:location];
@@ -420,14 +470,14 @@
         KEWindowView *bar = [KEWindowView returnWindowView];
         
         if (self.pageControl.currentPage == self.pageControl.numberOfPages - 2) {
-            bar.frame = CGRectMake((self.scrollView.contentOffset.x + 1076), 40/*30*/, 920, 580);
+            bar.frame = CGRectMake((self.scrollView.contentOffset.x + 1076), 40, 920, 580);
         }
         else {
-            bar.frame = CGRectMake((self.scrollView.contentOffset.x + 1024 * (self.pageControl.numberOfPages - self.pageControl.currentPage - 1) + 52), 40/*30*/, 920, 580);
+            bar.frame = CGRectMake((self.scrollView.contentOffset.x + 1024 * (self.pageControl.numberOfPages - self.pageControl.currentPage - 1) + 52), 40, 920, 580);
         }
         
         [self.scrollView addSubview:bar];
-        [self.viewWithCoreData addObject:bar];
+        [self.viewArrayWithCoreData addObject:bar];
         
         dispatch_queue_t dummyQueue = dispatch_queue_create("dummyQueue", nil);
         dispatch_async(dummyQueue, ^{
@@ -435,8 +485,7 @@
         });
         
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.0f * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
-            [self.scrollView setContentOffset:CGPointMake(1024 * (self.pageControl.numberOfPages - 1),0) animated:YES];
-                //self.pageControl.currentPage = self.pageControl.numberOfPages - 1;
+			[self.scrollView setContentOffset:CGPointMake(1024 * (self.pageControl.numberOfPages - 1), 0) animated:YES];
         });
     }
     if (self.pageControlBeingUsed) {
@@ -449,19 +498,19 @@
 - (IBAction)deletePage:(id)sender
 {
 	if (self.pageControl.currentPage != 0) {
-		[[self.viewWithCoreData objectAtIndex:self.pageControl.currentPage - 1] removeFromSuperview];
+		[[self.viewArrayWithCoreData objectAtIndex:self.pageControl.currentPage - 1] removeFromSuperview];
 	}
 	[UIView animateWithDuration:0.3 animations: ^{
-	    for (UIView * dummyObject in self.viewWithCoreData) {
-	        NSUInteger index = [self.viewWithCoreData indexOfObject:dummyObject];
+	    for (UIView * dummyObject in self.viewArrayWithCoreData) {
+	        NSUInteger index = [self.viewArrayWithCoreData indexOfObject:dummyObject];
 	        if ((index > self.pageControl.currentPage - 1) && (self.pageControl.currentPage != 0)) {
-	            CGRect fullScreenRect = CGRectMake(dummyObject.frame.origin.x - 1024, 40 /*30*/, 920, 580);
+	            CGRect fullScreenRect = CGRectMake(dummyObject.frame.origin.x - 1024, 40, 920, 580);
 	            [dummyObject setFrame:fullScreenRect];
 			}
 		}
 		
 	    if (self.pageControl.currentPage != 0) {
-	        [self.viewWithCoreData removeObjectAtIndex:self.pageControl.currentPage - 1];
+	        [self.viewArrayWithCoreData removeObjectAtIndex:self.pageControl.currentPage - 1];
 	        [self.entityArrayCoreData removeObjectAtIndex:self.pageControl.currentPage - 1];
 			
 	        NSError *error = nil;
@@ -485,7 +534,7 @@
 	            NSLog(@"Could not find entiyt in context");
 			}
 		}
-	    self.pageControl.numberOfPages = [self.viewWithCoreData count] + 1;
+	    self.pageControl.numberOfPages = [self.viewArrayWithCoreData count] + 1;
 	    self.scrollView.contentSize = CGSizeMake(self.scrollView.frame.size.width * self.pageControl.numberOfPages, self.scrollView.frame.size.height);
 	}];
 }
@@ -501,9 +550,11 @@
 {
 	if (!self.pageControlBeingUsed) {
 		CGFloat pageWidth = self.scrollView.frame.size.width;
-		NSInteger page = floor((self.scrollView.contentOffset.x - pageWidth / 2) / pageWidth) + 1;
+		NSUInteger page = floor((self.scrollView.contentOffset.x - pageWidth / 2) / pageWidth) + 1;
 		self.pageControl.currentPage = page;
 	}
+	
+	NSLog(@"CONTENT OFSET %f", self.scrollView.contentOffset.x);
 }
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView
@@ -550,11 +601,20 @@
     [SVProgressHUD showErrorWithStatus:@"Internet dropped"];
 }
 
-- (void)viewDidUnload
+#pragma mark - Subscribing to location permissions notifications 
+
+- (void)subscribeToCurrentLocationTrackingWithPemissionsNotification
 {
-    [self setNavBar:nil];
-    [self setDownBar:nil];
-    [super viewDidUnload];
+	[[NSNotificationCenter defaultCenter] addObserver:self
+											 selector:@selector(hide)
+												 name:@"HideCurrentLocationPage"
+											   object:nil];
+
+	
+	[[NSNotificationCenter defaultCenter] addObserver:self
+											 selector:@selector(show)
+												 name:@"HandlePermissions"
+											   object:nil];
 }
 
 @end

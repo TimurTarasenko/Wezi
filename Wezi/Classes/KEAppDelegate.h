@@ -18,6 +18,7 @@
 @property (nonatomic, readonly, strong) NSPersistentStoreCoordinator *persistentStoreCoordinator;
 @property (nonatomic, strong)           AFHTTPClient *client;
 
+
 - (void)saveContext;
 - (NSURL *)applicationDocumentsDirectory;
 
