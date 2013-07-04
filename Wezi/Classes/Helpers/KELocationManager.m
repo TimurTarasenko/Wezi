@@ -74,7 +74,7 @@ NSString * const kLocationDidChangeNotificationKey = @"locationManagerlocationDi
             [_locationManager setDesiredAccuracy: kCLLocationAccuracyThreeKilometers];
     }
     
-    return _locationManager;
+    return _locationManager ;
 }
 
 - (CLLocation *)currentLocation
