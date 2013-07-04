@@ -17,7 +17,7 @@
 @property (nonatomic, readonly, strong) NSManagedObjectModel *managedObjectModel;
 @property (nonatomic, readonly, strong) NSPersistentStoreCoordinator *persistentStoreCoordinator;
 @property (nonatomic, strong)           AFHTTPClient *client;
-
+@property (nonatomic, assign)			BOOL isBeingBackgrounded;
 
 - (void)saveContext;
 - (NSURL *)applicationDocumentsDirectory;

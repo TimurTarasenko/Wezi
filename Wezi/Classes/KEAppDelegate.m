@@ -28,22 +28,22 @@
 
 - (void)applicationWillResignActive:(UIApplication *)application
 {
- 
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application
 {
-    
+	NSLog(@"%d %s",__LINE__, __PRETTY_FUNCTION__);
+	self.isBeingBackgrounded = YES;
 }
 
 - (void)applicationWillEnterForeground:(UIApplication *)application
 {
-   
+
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application
 {
-  
+
 }
 
 
@@ -51,6 +51,7 @@
 {
     // Saves changes in the application's managed object context before the application terminates.
     [self saveContext];
+	
 }
 
 - (void)saveContext

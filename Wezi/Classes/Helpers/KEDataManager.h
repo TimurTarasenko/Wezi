@@ -8,11 +8,14 @@
 
 #import <Foundation/Foundation.h>
 
+@class KEAppDelegate;
+
 @interface KEDataManager : NSObject
 
 + (KEDataManager *)sharedDataManager;
-
+- (KEAppDelegate *)returnAppDelegate;
 - (NSManagedObjectContext *)managedObjectContextFromAppDelegate;
 - (NSFetchRequest *)requestWithEntityName:(NSString *)entity;
+
 
 @end

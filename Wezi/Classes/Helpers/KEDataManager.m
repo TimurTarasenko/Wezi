@@ -25,7 +25,7 @@ static KEDataManager *sharedDataManager = nil;
 
 - (NSManagedObjectContext *)managedObjectContextFromAppDelegate
 {
-    KEAppDelegate *appDelegate = (KEAppDelegate *)[[UIApplication sharedApplication] delegate];
+    KEAppDelegate *appDelegate = [self returnAppDelegate];
     
     id managedObjectContext = [appDelegate managedObjectContext];
     
@@ -40,6 +40,11 @@ static KEDataManager *sharedDataManager = nil;
     [fetchRequest setEntity:entity];
     
     return fetchRequest;
+}
+
+- (KEAppDelegate *)returnAppDelegate
+{
+	return (KEAppDelegate *)[[UIApplication sharedApplication] delegate];
 }
 
 @end

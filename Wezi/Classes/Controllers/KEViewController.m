@@ -43,6 +43,7 @@
 @property (nonatomic, assign)       BOOL internetDroppedFirstly;
 @property (nonatomic, assign)		BOOL isTrackingCurrentLocation;
 
+
 @end
 
 @implementation KEViewController
@@ -129,43 +130,38 @@
 
 #pragma mark - UI configuration and update
 
-- (void)handleLocationPermissions
-{
-		//self.isTrackingCurrentLocation = [[KELocationManager sharedManager] isPermitted];
-	if ([[KELocationManager sharedManager] isPermitted]) {
-		[self viewDidLoad];
-	}
-}
 
 - (void)hide
 {
 	self.currentLocationView.hidden = YES;
-	
-	NSLog(@" SCROLL bef %f", self.scrollView.contentOffset.x);
-		//self.pageControl.numberOfPages = [self.viewArrayWithCoreData count];
-		//self.scrollView.contentSize = CGSizeMake(self.scrollView.frame.size.width * self.pageControl.numberOfPages, self.scrollView.frame.size.height);
-	
-	
-	[self.scrollView setContentOffset:CGPointMake(1024 * [self.viewArrayWithCoreData count] , 0) animated:YES];
-	self.pageControl.currentPage = [self.viewArrayWithCoreData count]-1;
-	NSLog(@" SCROLL aft %f", self.scrollView.contentOffset.x);
-	
-	
-    self.pageControl.currentPage = self.pageControl.numberOfPages+1;
-	 
+			
+	if ([self.viewArrayWithCoreData count]) {
+		self.scrollView.contentSize = CGSizeMake(1024 * [self.viewArrayWithCoreData count], self.scrollView.frame.size.height);
+		for (UIView *cityView in self.viewArrayWithCoreData) {
+			cityView.frame = CGRectMake(cityView.frame.origin.x - 1024, 40, 920, 580);
+		}
+		self.pageControl.numberOfPages = [self.viewArrayWithCoreData count];
+	}
 }
 
 - (void)show
 {
 	self.currentLocationView.hidden = NO;
 	
-	[self.scrollView setContentOffset:CGPointMake(0, 0) animated:YES];
-	NSLog(@" SCROLL sho %f", self.scrollView.contentOffset.x);
-	self.pageControl.numberOfPages = [self.viewArrayWithCoreData count]+1;
-	self.pageControl.currentPage = 0;
-	 self.scrollView.contentSize = CGSizeMake(self.scrollView.frame.size.width * self.pageControl.numberOfPages, self.scrollView.frame.size.height);
+	if ([KELocationManager sharedManager].counter == 1) {
+		NSLog(@" ITS OK");
+	}
+	
+	if ([[KEDataManager sharedDataManager] returnAppDelegate].isBeingBackgrounded) {
+		for (UIView *cityView in self.viewArrayWithCoreData) {
+			cityView.frame = CGRectMake(cityView.frame.origin.x + 1024 , 40, 920, 580);
+		}
+		self.pageControl.numberOfPages = [self.viewArrayWithCoreData count] + 1;
+		self.pageControl.currentPage = 0;
+		[self.scrollView setContentOffset:CGPointMake(0, 0) animated:YES];
+		self.scrollView.contentSize = CGSizeMake(1024 + (1024 * [self.viewArrayWithCoreData count]), self.scrollView.frame.size.height);
+	}
 }
-
 
 - (void)configurateUIElements
 {
@@ -553,8 +549,6 @@
 		NSUInteger page = floor((self.scrollView.contentOffset.x - pageWidth / 2) / pageWidth) + 1;
 		self.pageControl.currentPage = page;
 	}
-	
-	NSLog(@"CONTENT OFSET %f", self.scrollView.contentOffset.x);
 }
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView

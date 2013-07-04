@@ -26,7 +26,7 @@
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" pagingEnabled="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" id="KV2-Lh-pVA">
                                 <rect key="frame" x="0.0" y="44" width="1024" height="660"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                <color key="backgroundColor" red="0.98584980867346939" green="0.95771647204586197" blue="0.72145332076854318" alpha="0.0" colorSpace="calibratedRGB"/>
+                                <color key="backgroundColor" red="0.53599587540000004" green="0.91906489160000004" blue="0.5032709688" alpha="1" colorSpace="calibratedRGB"/>
                             </scrollView>
                             <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="iT0-q0-VeK">
                                 <rect key="frame" x="0.0" y="704" width="1024" height="44"/>

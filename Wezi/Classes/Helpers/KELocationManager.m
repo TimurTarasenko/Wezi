@@ -74,6 +74,7 @@ NSString * const kLocationDidChangeNotificationKey = @"locationManagerlocationDi
 		[_locationManager setDistanceFilter:1000];
 		[_locationManager setDesiredAccuracy:kCLLocationAccuracyThreeKilometers];
 	}
+	counter = 1;
 	
 	return _locationManager;
 }
@@ -116,22 +117,35 @@ NSString * const kLocationDidChangeNotificationKey = @"locationManagerlocationDi
 
 - (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status
 {
-	NSLog(@"%d %s",__LINE__, __PRETTY_FUNCTION__);
+	NSLog(@"%d %s", __LINE__, __PRETTY_FUNCTION__);
 	
 	if (status == kCLAuthorizationStatusDenied) {
 		NSLog(@"permission denied");
 		
-		self.isPermitted = NO;
-			[[NSNotificationCenter defaultCenter] postNotificationName:@"HideCurrentLocationPage" object:self];
+		[[NSNotificationCenter defaultCenter] postNotificationName:@"HideCurrentLocationPage" object:nil];
 	}
 	else if (status == kCLAuthorizationStatusAuthorized) {
 		NSLog(@"permission granted");
 		
-		self.isPermitted = YES;
-			[[NSNotificationCenter defaultCenter] postNotificationName:@"HandlePermissions" object:self];
+		[[NSNotificationCenter defaultCenter] postNotificationName:@"HandlePermissions" object:nil];
+		counter++;
+		
+		NSLog(@" COUNTER AFTER ++ %i", counter);
 	}
-	
-	
+}
+
+#pragma mark - public static property
+
+static NSUInteger counter;
+
+- (NSUInteger)counter
+{
+    return counter;
+}
+
+- (void)setCounter:(NSUInteger)newValue
+{
+    counter = newValue;
 }
 
 @end
