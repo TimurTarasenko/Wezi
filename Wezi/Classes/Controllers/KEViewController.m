@@ -41,8 +41,6 @@
 @property (nonatomic, readwrite)    BOOL isShownMapPopover;
 @property (nonatomic, readwrite)    BOOL pageControlBeingUsed;
 @property (nonatomic, assign)       BOOL internetDroppedFirstly;
-@property (nonatomic, assign)		BOOL isTrackingCurrentLocation;
-
 
 @end
 
@@ -102,7 +100,6 @@
 		CLLocationManager *foo = [[CLLocationManager alloc] init];
 		[foo.delegate locationManager:foo didChangeAuthorizationStatus: kCLAuthorizationStatusAuthorized];
 		
-		
 		[self configurateUIElements];
 		self.dataManager = [KEDataManager sharedDataManager];
 		self.managedObjectContext = [self.dataManager managedObjectContextFromAppDelegate];
@@ -130,11 +127,12 @@
 
 #pragma mark - UI configuration and update
 
-
 - (void)hide
 {
 	self.currentLocationView.hidden = YES;
-			
+
+		//TODO: test any cases to find a bugs
+	
 	if ([self.viewArrayWithCoreData count]) {
 		self.scrollView.contentSize = CGSizeMake(1024 * [self.viewArrayWithCoreData count], self.scrollView.frame.size.height);
 		for (UIView *cityView in self.viewArrayWithCoreData) {

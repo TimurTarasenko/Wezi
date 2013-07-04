@@ -129,8 +129,6 @@ NSString * const kLocationDidChangeNotificationKey = @"locationManagerlocationDi
 		
 		[[NSNotificationCenter defaultCenter] postNotificationName:@"HandlePermissions" object:nil];
 		counter++;
-		
-		NSLog(@" COUNTER AFTER ++ %i", counter);
 	}
 }
 
