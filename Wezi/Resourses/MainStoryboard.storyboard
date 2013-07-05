@@ -26,7 +26,7 @@
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" pagingEnabled="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" id="KV2-Lh-pVA">
                                 <rect key="frame" x="0.0" y="44" width="1024" height="660"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                <color key="backgroundColor" red="0.53599587540000004" green="0.91906489160000004" blue="0.5032709688" alpha="1" colorSpace="calibratedRGB"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                             </scrollView>
                             <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="iT0-q0-VeK">
                                 <rect key="frame" x="0.0" y="704" width="1024" height="44"/>
@@ -225,6 +225,37 @@
     <resources>
         <image name="background.png" width="1024" height="768"/>
     </resources>
+    <classes>
+        <class className="KEMapViewController" superclassName="UIViewController">
+            <source key="sourceIdentifier" type="project" relativePath="./Classes/KEMapViewController.h"/>
+            <relationships>
+                <relationship kind="action" name="chooseLocation:"/>
+                <relationship kind="action" name="dropPinPressed:"/>
+                <relationship kind="outlet" name="map" candidateClass="MKMapView"/>
+                <relationship kind="outlet" name="mapNavBar" candidateClass="UINavigationBar"/>
+            </relationships>
+        </class>
+        <class className="KEShareViewController" superclassName="UIViewController">
+            <source key="sourceIdentifier" type="project" relativePath="./Classes/KEShareViewController.h"/>
+            <relationships>
+                <relationship kind="action" name="emailPressed:"/>
+            </relationships>
+        </class>
+        <class className="KEViewController" superclassName="UIViewController">
+            <source key="sourceIdentifier" type="project" relativePath="./Classes/KEViewController.h"/>
+            <relationships>
+                <relationship kind="action" name="changePage:"/>
+                <relationship kind="action" name="deletePage:"/>
+                <relationship kind="action" name="goToMap:"/>
+                <relationship kind="action" name="refresh:"/>
+                <relationship kind="outlet" name="downBar" candidateClass="UIToolbar"/>
+                <relationship kind="outlet" name="navBar" candidateClass="UINavigationBar"/>
+                <relationship kind="outlet" name="pageControl" candidateClass="UIPageControl"/>
+                <relationship kind="outlet" name="scrollView" candidateClass="UIScrollView"/>
+                <relationship kind="outlet" name="weziImage" candidateClass="UIImageView"/>
+            </relationships>
+        </class>
+    </classes>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
         <simulatedStatusBarMetrics key="statusBar" statusBarStyle="blackTranslucent"/>
         <simulatedOrientationMetrics key="orientation"/>

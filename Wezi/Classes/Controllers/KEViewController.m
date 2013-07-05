@@ -105,6 +105,8 @@
 		self.managedObjectContext = [self.dataManager managedObjectContextFromAppDelegate];
 		[self prepareForLoading];
 	}
+	
+		//[super viewDidLoad];
 }
 
 - (void)didReceiveMemoryWarning
@@ -130,27 +132,34 @@
 - (void)hide
 {
 	self.currentLocationView.hidden = YES;
+	[self.currentLocationView removeFromSuperview];
 
 		//TODO: test any cases to find a bugs
 	
-	if ([self.viewArrayWithCoreData count]) {
+	if ([self.entityArrayCoreData count]) {
 		self.scrollView.contentSize = CGSizeMake(1024 * [self.viewArrayWithCoreData count], self.scrollView.frame.size.height);
 		for (UIView *cityView in self.viewArrayWithCoreData) {
 			cityView.frame = CGRectMake(cityView.frame.origin.x - 1024, 40, 920, 580);
 		}
 		self.pageControl.numberOfPages = [self.viewArrayWithCoreData count];
 	}
+	
+	if ([self.entityArrayCoreData count] == 0) {
+			self.pageControl.numberOfPages = 0;
+	}
 }
 
 - (void)show
 {
+	[self.scrollView addSubview:self.currentLocationView];
 	self.currentLocationView.hidden = NO;
 	
-	if ([KELocationManager sharedManager].counter == 1) {
-		NSLog(@" ITS OK");
-	}
 	
 	if ([[KEDataManager sharedDataManager] returnAppDelegate].isBeingBackgrounded) {
+//		if ([self.viewArrayWithCoreData count] == 0) {
+//			<#statements#>
+//		}
+		
 		for (UIView *cityView in self.viewArrayWithCoreData) {
 			cityView.frame = CGRectMake(cityView.frame.origin.x + 1024 , 40, 920, 580);
 		}
@@ -426,6 +435,8 @@
 
 - (void)addPressedWithCoordinate:(CLLocation *)location 
 {
+	NSLog(@" PAGES IS %i", self.pageControl.numberOfPages);
+	
     if ([self.entityArrayCoreData count] == 0) {
         [self.entityArrayCoreData addObject:location];
     }
@@ -438,8 +449,62 @@
         return;
     }
     if (self.pageControl.numberOfPages < 20) {
-        self.pageControl.numberOfPages += 1;
-    }    
+		if ((self.currentLocationView.hidden == NO) && (self.entityArrayCoreData.count > 1)) {
+			self.pageControl.numberOfPages += 1;
+		}
+		if ((self.currentLocationView.hidden == NO) && (self.entityArrayCoreData.count == 1)) {
+			self.pageControl.numberOfPages += 1;
+		}
+		if ((self.currentLocationView.hidden == YES) && (self.entityArrayCoreData.count > 1)) {
+			self.pageControl.numberOfPages += 1;
+		}
+		if ((self.currentLocationView.hidden == YES) && (self.entityArrayCoreData.count == 1)) {
+			self.pageControl.numberOfPages += 1;
+		}
+			//self.pageControl.numberOfPages += 1;
+    }
+		//added to handle hidden state
+	NSLog(@" VIEHHI %@", [self.viewArrayWithCoreData debugDescription]);
+	
+	if ((self.pageControl.numberOfPages == 1) && (self.currentLocationView.hidden == YES)) {
+		KEWindowView *foo = [KEWindowView returnWindowView];
+        foo.frame = CGRectMake(1076, 40, 920, 580);
+        [self.scrollView addSubview:foo];
+		[self.viewArrayWithCoreData addObject:foo];
+        
+			//[self.entityArrayCoreData addObject:location];
+        
+		dispatch_queue_t dummyQueue = dispatch_queue_create("dummyQueue", nil);
+        dispatch_async(dummyQueue, ^{
+            [self reloadDataWithNewLocation:location withView:foo];
+		});
+	}
+		//
+	
+	NSLog(@" NUMBER %i", self.pageControl.numberOfPages);
+	
+		//add for adding if pages is 1
+	if ((self.pageControl.numberOfPages == 1) && ([self.entityArrayCoreData count] > 1)) {
+        KEWindowView *foo = [KEWindowView returnWindowView];
+        foo.frame = CGRectMake(1076, 40, 920, 580);
+        [self.scrollView addSubview:foo];
+        [self.viewArrayWithCoreData addObject:foo];
+        
+        if ([self.entityArrayCoreData count] == 1) {
+            [self.entityArrayCoreData addObject:location];
+        }
+		
+        dispatch_queue_t dummyQueue = dispatch_queue_create("dummyQueue", nil);
+        dispatch_async(dummyQueue, ^{
+            [self reloadDataWithNewLocation:location withView:foo];
+		});
+        
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.0f * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+            [self.scrollView setContentOffset:CGPointMake(1024, 0) animated:YES];
+        });
+    }
+		//
+	
     if (self.pageControl.numberOfPages == 2) {
         KEWindowView *foo = [KEWindowView returnWindowView];
         foo.frame = CGRectMake(1076, 40, 920, 580);
@@ -458,7 +523,7 @@
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.0f * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
             [self.scrollView setContentOffset:CGPointMake(1024, 0) animated:YES];
         });
-    }    
+    }
     else if (self.pageControl.numberOfPages > 2) {
         [self.entityArrayCoreData addObject:location];
         KEWindowView *bar = [KEWindowView returnWindowView];
@@ -486,6 +551,16 @@
         self.pageControl.currentPage = self.pageControl.numberOfPages - 1;
     }
     
+	NSLog(@" Array %@", [self.viewArrayWithCoreData debugDescription]);
+	if ((self.currentLocationView.hidden == YES) && (self.entityArrayCoreData.count == 1)) {
+		NSLog(@"%d %s",__LINE__, __PRETTY_FUNCTION__);
+		for (UIView *cityView in self.viewArrayWithCoreData) {
+			cityView.frame = CGRectMake(cityView.frame.origin.x - 1024 , 40, 920, 580);
+				//[self.scrollView setContentOffset:CGPointMake(0, 0) animated:YES];
+				//self.pageControl.numberOfPages = 1;
+		}
+	}
+	
     self.scrollView.contentSize = CGSizeMake(self.scrollView.frame.size.width * self.pageControl.numberOfPages, self.scrollView.frame.size.height);
 }
 
@@ -496,7 +571,7 @@
 	}
 	[UIView animateWithDuration:0.3 animations: ^{
 	    for (UIView * dummyObject in self.viewArrayWithCoreData) {
-	        NSUInteger index = [self.viewArrayWithCoreData indexOfObject:dummyObject];
+	        NSUInteger index = [self.entityArrayCoreData/*viewArrayWithCoreData*/ indexOfObject:dummyObject];
 	        if ((index > self.pageControl.currentPage - 1) && (self.pageControl.currentPage != 0)) {
 	            CGRect fullScreenRect = CGRectMake(dummyObject.frame.origin.x - 1024, 40, 920, 580);
 	            [dummyObject setFrame:fullScreenRect];
