@@ -505,25 +505,25 @@
     }
 		//
 	
-    if (self.pageControl.numberOfPages == 2) {
-        KEWindowView *foo = [KEWindowView returnWindowView];
-        foo.frame = CGRectMake(1076, 40, 920, 580);
-        [self.scrollView addSubview:foo];
-        [self.viewArrayWithCoreData addObject:foo];
-        
-        if ([self.entityArrayCoreData count] == 1) {
-            [self.entityArrayCoreData addObject:location];
-        }
-     
-        dispatch_queue_t dummyQueue = dispatch_queue_create("dummyQueue", nil);
-        dispatch_async(dummyQueue, ^{
-            [self reloadDataWithNewLocation:location withView:foo];
+	if (self.pageControl.numberOfPages == 2) {
+		KEWindowView *foo = [KEWindowView returnWindowView];
+		foo.frame = CGRectMake(1076, 40, 920, 580);
+		[self.scrollView addSubview:foo];
+		[self.viewArrayWithCoreData addObject:foo];
+		
+		if ([self.entityArrayCoreData count] == 1) {
+			[self.entityArrayCoreData addObject:location];
+		}
+		
+		dispatch_queue_t dummyQueue = dispatch_queue_create("dummyQueue", nil);
+		dispatch_async(dummyQueue, ^{
+		    [self reloadDataWithNewLocation:location withView:foo];
 		});
-        
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.0f * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
-            [self.scrollView setContentOffset:CGPointMake(1024, 0) animated:YES];
-        });
-    }
+		
+		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.0f * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+		    [self.scrollView setContentOffset:CGPointMake(1024, 0) animated:YES];
+		});
+	}
     else if (self.pageControl.numberOfPages > 2) {
         [self.entityArrayCoreData addObject:location];
         KEWindowView *bar = [KEWindowView returnWindowView];
@@ -543,17 +543,16 @@
             [self reloadDataWithNewLocation:location withView:bar];
         });
         
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.0f * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
-			[self.scrollView setContentOffset:CGPointMake(1024 * (self.pageControl.numberOfPages - 1), 0) animated:YES];
-        });
+		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.0f * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
+		    [self.scrollView setContentOffset:CGPointMake(1024 * (self.pageControl.numberOfPages - 1), 0) animated:YES];
+		});
     }
     if (self.pageControlBeingUsed) {
         self.pageControl.currentPage = self.pageControl.numberOfPages - 1;
     }
-    
-	NSLog(@" Array %@", [self.viewArrayWithCoreData debugDescription]);
+		//NSLog(@" Array %@", [self.viewArrayWithCoreData debugDescription]);
+	
 	if ((self.currentLocationView.hidden == YES) && (self.entityArrayCoreData.count == 1)) {
-		NSLog(@"%d %s",__LINE__, __PRETTY_FUNCTION__);
 		for (UIView *cityView in self.viewArrayWithCoreData) {
 			cityView.frame = CGRectMake(cityView.frame.origin.x - 1024 , 40, 920, 580);
 				//[self.scrollView setContentOffset:CGPointMake(0, 0) animated:YES];
@@ -566,21 +565,65 @@
 
 - (IBAction)deletePage:(id)sender
 {
+	NSLog(@" viewArrayWithCoreData %@", [self.viewArrayWithCoreData debugDescription]);
+	NSLog(@" viewArray count %i", [self.viewArrayWithCoreData count]);
+	NSLog(@" entityArrayCoreData %@", [self.entityArrayCoreData debugDescription]);
+	NSLog(@" entity count %i", [self.viewArrayWithCoreData count]);
+	NSLog(@" currentPage %i", self.pageControl.currentPage);
+	NSLog(@" number of pages %i", self.pageControl.numberOfPages);
+	
 	if (self.pageControl.currentPage != 0) {
-		[[self.viewArrayWithCoreData objectAtIndex:self.pageControl.currentPage - 1] removeFromSuperview];
+			//add
+		if (self.currentLocationView.hidden == YES) {
+			[[self.viewArrayWithCoreData objectAtIndex:self.pageControl.currentPage] removeFromSuperview];
+		}
+		else {
+			[[self.viewArrayWithCoreData objectAtIndex:self.pageControl.currentPage - 1] removeFromSuperview];
+		}
+			//daa
+		
+			//[[self.viewArrayWithCoreData objectAtIndex:self.pageControl.currentPage - 1] removeFromSuperview];
 	}
 	[UIView animateWithDuration:0.3 animations: ^{
 	    for (UIView * dummyObject in self.viewArrayWithCoreData) {
-	        NSUInteger index = [self.entityArrayCoreData/*viewArrayWithCoreData*/ indexOfObject:dummyObject];
-	        if ((index > self.pageControl.currentPage - 1) && (self.pageControl.currentPage != 0)) {
-	            CGRect fullScreenRect = CGRectMake(dummyObject.frame.origin.x - 1024, 40, 920, 580);
-	            [dummyObject setFrame:fullScreenRect];
+	        NSUInteger index = [self.viewArrayWithCoreData indexOfObject:dummyObject];
+			
+				//add
+			if (self.currentLocationView.hidden == YES) {
+				if ((index > self.pageControl.currentPage) && (self.pageControl.currentPage != 0)) {
+						//CGRect fullScreenRect = CGRectMake(dummyObject.frame.origin.x - 1024, 40, 920, 580);
+						//[dummyObject setFrame:fullScreenRect];
+				}
 			}
+			else {
+				if ((index > self.pageControl.currentPage - 1) && (self.pageControl.currentPage != 0)) {
+					CGRect fullScreenRect = CGRectMake(dummyObject.frame.origin.x - 1024, 40, 920, 580);
+					[dummyObject setFrame:fullScreenRect];
+				}
+			}
+				//daa
+			
+//	        if ((index > self.pageControl.currentPage - 1) && (self.pageControl.currentPage != 0)) {
+//	            CGRect fullScreenRect = CGRectMake(dummyObject.frame.origin.x - 1024, 40, 920, 580);
+//	            [dummyObject setFrame:fullScreenRect];
+//			}
 		}
 		
 	    if (self.pageControl.currentPage != 0) {
-	        [self.viewArrayWithCoreData removeObjectAtIndex:self.pageControl.currentPage - 1];
-	        [self.entityArrayCoreData removeObjectAtIndex:self.pageControl.currentPage - 1];
+			
+				//add
+			if (self.currentLocationView.hidden == YES) {
+				[self.viewArrayWithCoreData removeObjectAtIndex:self.pageControl.currentPage];
+				[self.entityArrayCoreData removeObjectAtIndex:self.pageControl.currentPage];
+			}
+			else {
+				[self.viewArrayWithCoreData removeObjectAtIndex:self.pageControl.currentPage - 1];
+				[self.entityArrayCoreData removeObjectAtIndex:self.pageControl.currentPage - 1];
+			}
+				//daa
+			
+//	        [self.viewArrayWithCoreData removeObjectAtIndex:self.pageControl.currentPage - 1];
+//	        [self.entityArrayCoreData removeObjectAtIndex:self.pageControl.currentPage - 1];
 			
 	        NSError *error = nil;
 	        NSArray *places = [self.managedObjectContext executeFetchRequest:[self.dataManager requestWithEntityName:@"Place"]
@@ -603,7 +646,18 @@
 	            NSLog(@"Could not find entiyt in context");
 			}
 		}
-	    self.pageControl.numberOfPages = [self.viewArrayWithCoreData count] + 1;
+			//add it 
+		if (self.currentLocationView.hidden == YES) {
+			self.pageControl.numberOfPages = [self.viewArrayWithCoreData count];
+		}
+		else {
+			self.pageControl.numberOfPages = [self.viewArrayWithCoreData count] + 1;
+		}
+			//daa
+		
+//	    self.pageControl.numberOfPages = [self.viewArrayWithCoreData count] + 1; // handle if no current view
+		
+		
 	    self.scrollView.contentSize = CGSizeMake(self.scrollView.frame.size.width * self.pageControl.numberOfPages, self.scrollView.frame.size.height);
 	}];
 }
